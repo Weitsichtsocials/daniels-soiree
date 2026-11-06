@@ -247,7 +247,7 @@ document.addEventListener("click", (e) => {
   if (!tile) return;
   e.preventDefault();
   tile.classList.add("is-pressed");
-  setTimeout(() => { location.hash = tile.getAttribute("href"); }, 170);
+  setTimeout(() => { location.hash = tile.getAttribute("href"); }, 120);
 });
 
 // ── Router, Übergänge, Inaktivität ──────────────────────────
@@ -258,7 +258,7 @@ let current = "", first = true, stageOpen = false, renderSeq = 0;
 
 // ── Krebs-Übergang: krabbelt nach oben raus, auf der neuen Seite wieder rein ──
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const CRAB_OUT = 520, CRAB_IN = 480;
+const CRAB_OUT = 420, CRAB_IN = 400;
 function pageCrab() {
   return $$("#view .crab").find((c) => !c.closest(".seal") && c.offsetWidth > 0) || null;
 }
@@ -311,13 +311,14 @@ async function crabIn(seq) {
   const holder = c.closest(".reveal");
   if (holder) { holder.style.animation = "none"; holder.style.opacity = "1"; }
   c.style.visibility = "hidden";
+  c.style.animationPlayState = "paused";
   await new Promise((r) => requestAnimationFrame(r));
   const g = crabGeom(c);
   const fly = crabClone(g);
   await fly.animate(scuttle(g.top + g.h + 40, "in"), { duration: CRAB_IN, easing: "linear", fill: "forwards" }).finished.catch(() => {});
   // bis die Seite fertig eingeblendet ist, liegt der fliegende Krebs obenauf
-  await wait(120);
-  if (seq === renderSeq && c.isConnected) c.style.visibility = "";
+  await wait(40);
+  if (seq === renderSeq && c.isConnected) { c.style.visibility = ""; c.style.animationPlayState = ""; }
   fly.remove();
 }
 
@@ -332,7 +333,7 @@ async function render() {
   const wasFirst = first;
   if (!first) {
     root.classList.remove("is-entering");
-    await Promise.all([crabOut(), (async () => { await wait(160); root.classList.add("is-leaving"); await wait(360); })()]);
+    await Promise.all([crabOut(), (async () => { await wait(120); root.classList.add("is-leaving"); await wait(300); })()]);
   }
   if (seq !== renderSeq) return; // inzwischen neu navigiert
   first = false;
