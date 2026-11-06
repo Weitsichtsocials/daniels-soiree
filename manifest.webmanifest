@@ -1,0 +1,11 @@
+{
+  "name": "Daniel’s Soirée",
+  "short_name": "Soirée",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#efe6d9",
+  "theme_color": "#efe6d9",
+  "icons": [{ "src": "assets/app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
+}

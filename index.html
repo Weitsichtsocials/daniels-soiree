@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+  <meta name="theme-color" content="#efe7db">
+  <title>Daniel’s Soirée</title>
+  <link rel="icon" type="image/png" href="assets/crab.png">
+  <link rel="apple-touch-icon" href="assets/app-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Soirée">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <script>
+    // Auf Handy/Desktop wird die Station im echten iPad-Format (3:4) gezeigt.
+    (function () {
+      var fit = function () {
+        var w = innerWidth, h = innerHeight, r = w / h;
+        var admin = /^#\/admin/.test(location.hash);
+        var force = /[?&]full\b/.test(location.search);
+        var framed = !force && !admin && (r < 0.6 || r > 0.9);
+        document.documentElement.classList.toggle("framed", framed);
+        if (framed) document.documentElement.style.setProperty("--s", Math.min((w - 24) / 840, (h - 24) / 1200));
+      };
+      fit(); addEventListener("resize", fit); addEventListener("hashchange", fit);
+    })();
+  </script>
+  <div id="app">
+    <!-- Atmosphäre: Raum aus der Einladung, Licht -->
+    <div class="scene" aria-hidden="true">
+      <div class="scene__room"></div>
+      <div class="scene__veil"></div>
+      <div class="scene__light"></div>
+      <div class="scene__dust"></div>
+    </div>
+    <div id="scroll"><main id="view" class="view" aria-live="polite"></main></div>
+    <div id="toast" class="toast" role="status"></div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
