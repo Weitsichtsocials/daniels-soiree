@@ -8,7 +8,7 @@ export const CONFIG = {
   // Solange beide Felder leer sind, läuft die Seite im Demo-Modus
   // (Daten bleiben nur im Browser, Admin-Passwort: "soiree").
   supabaseUrl: "https://yizbwxxydyobioalcmns.supabase.co",
-  supabaseAnonKey: "",
+  supabaseAnonKey: "sb_publishable_SwvFgTPOMqDxIGa3DRVe7g_-aJ4vwvJ",
 
   event: {
     title: "Daniel’s Soirée",
