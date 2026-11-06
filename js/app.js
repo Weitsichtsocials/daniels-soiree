@@ -266,7 +266,17 @@ function hiss({ t = 0, dur = 0.03, vol = 0.2, freq = 2000, q = 1, type = "bandpa
   src.connect(fl); fl.connect(g); g.connect(master); src.start(t0); src.stop(t0 + dur + 0.02);
 }
 const SFX = {
-  click() { hiss({ dur: 0.035, vol: 0.35, freq: 1400, q: 0.8 }); tone({ f: 190, f2: 120, dur: 0.07, vol: 0.28 }); },
+  // hochwertiger mechanischer Knopf: kurzer Anschlag, satter Körper, feiner Nachklang
+  click() {
+    hiss({ dur: 0.008, vol: 0.32, freq: 5200, q: 0.9 });
+    hiss({ dur: 0.045, vol: 0.22, freq: 900, q: 1.4 });
+    tone({ f: 150, f2: 92, dur: 0.075, vol: 0.34, attack: 0.002 });
+    tone({ f: 1760, type: "triangle", dur: 0.03, vol: 0.035, attack: 0.001 });
+  },
+  release() {
+    hiss({ dur: 0.006, vol: 0.14, freq: 6400, q: 1.1 });
+    tone({ f: 240, f2: 170, dur: 0.035, vol: 0.12, attack: 0.002 });
+  },
   pop() { tone({ f: 620, f2: 1100, dur: 0.09, vol: 0.22 }); hiss({ dur: 0.02, vol: 0.12, freq: 3000 }); },
   clink() {
     [[0, 1], [0.075, 0.8]].forEach(([t, v]) => [2637, 3951, 5274, 6645].forEach((f, i) =>
@@ -291,7 +301,12 @@ document.addEventListener("pointerdown", () => { if (soundOn()) audio(); }, { on
 // ── Sichtbares „Drücken“ bei jedem Antippen ─────────────────
 const PRESSABLE = ".tile, .btn, .back, .options button, .choice label, .emojis button, .shuffle, .filters button, .tabs button, .icon, .home__admin, .topbar__crab";
 let pressedEl = null;
-function release() { if (pressedEl) { const el = pressedEl; setTimeout(() => el.classList.remove("is-pressed"), 120); pressedEl = null; } }
+function release() {
+  if (!pressedEl) return;
+  const el = pressedEl; pressedEl = null;
+  if (!el.matches(".emojis button, .options button")) play("release");
+  setTimeout(() => el.classList.remove("is-pressed"), 110);
+}
 document.addEventListener("pointerdown", (e) => {
   const el = e.target.closest?.(PRESSABLE);
   if (!el || el.disabled) return;
