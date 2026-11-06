@@ -705,12 +705,8 @@ function viewQuiz(root) {
       play(ok ? "correct" : "wrong");
       asked.add(q.q);
       answers.push({ frage: q.q, antwort: q.options[pick], richtig: ok });
-      $$(".options button", box).forEach((x, i) => {
-        x.disabled = true;
-        if (i === q.correct) x.classList.add("is-correct");
-        else if (i === pick) x.classList.add("is-wrong");
-        else x.classList.add("is-dim");
-      });
+      $$(".options button", box).forEach((x) => (x.disabled = true));
+      b.classList.add(ok ? "is-right" : "is-false");   // nur der getippte Button leuchtet
       await wait(1300);
       idx++;
       idx < Q.length ? question() : result();

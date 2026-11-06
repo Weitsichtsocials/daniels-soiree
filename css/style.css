@@ -505,6 +505,15 @@ body.is-sub .scene__veil {
 .options button.is-wrong { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
 .options button.is-dim { opacity: .45; }
 .options button[disabled] { cursor: default; }
+.options button.is-right, .options.two button.is-right {
+  background: rgba(134, 178, 118, .38); border-color: rgba(96, 146, 82, .75); color: #2f4a26;
+  animation: lightUp .35s ease-out;
+}
+.options button.is-false, .options.two button.is-false {
+  background: rgba(214, 120, 104, .32); border-color: rgba(176, 82, 66, .7); color: #5c2a20;
+  animation: lightUp .35s ease-out;
+}
+@keyframes lightUp { from { filter: brightness(1.25); } to { filter: none; } }
 .score { font-family: var(--serif); font-style: italic; font-size: clamp(84px, 24cqw, 132px); line-height: 1; color: var(--ink); margin-top: 22px; }
 .score small { font-size: .4em; color: var(--gold); }
 
