@@ -7,7 +7,7 @@ export const CONFIG = {
   // Supabase → Project Settings → API
   // Solange beide Felder leer sind, läuft die Seite im Demo-Modus
   // (Daten bleiben nur im Browser, Admin-Passwort: "soiree").
-  supabaseUrl: "",
+  supabaseUrl: "https://yizbwxxydyobioalcmns.supabase.co",
   supabaseAnonKey: "",
 
   event: {

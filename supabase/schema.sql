@@ -82,6 +82,13 @@ begin
   end loop;
 end $$;
 
+-- Rechte für die Daten-API (RLS oben regelt, was davon greift)
+grant usage on schema public to anon, authenticated;
+grant insert on public.guestbook_entries, public.baby_predictions, public.quiz_results, public.confessions to anon, authenticated;
+grant select, update, delete on public.guestbook_entries, public.baby_predictions, public.quiz_results, public.confessions to authenticated;
+grant select on public.admin_users to authenticated;
+grant execute on function public.is_admin() to anon, authenticated;
+
 -- Gäste dürfen bei Beichten nur den Text einreichen, nicht schon
 -- "gelesen"/"Favorit" setzen.
 create or replace function public.confession_defaults()
