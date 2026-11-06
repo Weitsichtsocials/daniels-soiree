@@ -63,6 +63,16 @@ html.framed #app {
   border-radius: 34px; box-shadow: 0 0 0 10px #2f2620, 0 40px 90px -30px rgba(40,28,18,.6);
 }
 
+/* ── Lichtschein über das ganze Bild ─────────────────── */
+.sheen { position: absolute; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; }
+.sheen i {
+  position: absolute; top: -20%; bottom: -20%; left: 0; width: 55%;
+  transform: translateX(-200%);
+  background: linear-gradient(105deg,
+    rgba(255,248,232,0) 0%, rgba(255,240,210,.16) 36%, rgba(255,252,242,.55) 50%, rgba(255,240,210,.16) 64%, rgba(255,248,232,0) 100%);
+  mix-blend-mode: screen;
+}
+
 /* ── Szene ─────────────────────────────────────────────────── */
 .scene { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .scene__room {
@@ -228,6 +238,13 @@ body.is-sub .scene__veil {
     0 calc(var(--edge) + 1px) 0 rgba(140,108,70,.55),
     0 8px 14px -8px rgba(80,58,34,.45);
 }
+.tile__shine { /* Glanz, der der Rundbogen-Form der Taste folgt */
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
+  background: linear-gradient(105deg, transparent 36%, rgba(255,236,196,.35) 44%, rgba(255,255,255,.95) 50%, rgba(255,236,196,.35) 56%, transparent 64%) 160% 0 / 250% 100% no-repeat;
+  mix-blend-mode: screen;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0);
+}
+.tile.is-pressed .tile__shine { opacity: .5; }
 .tile__t {
   display: block; font-family: var(--serif); font-style: italic; font-weight: 500;
   font-size: clamp(26px, 3.4cqh, 42px); line-height: 1.05; color: var(--ink);

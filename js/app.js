@@ -231,6 +231,63 @@ function bindEmojis(root, field) {
   });
 }
 
+// ── Geräusche (im Browser erzeugt, keine Dateien) ─────────────
+const SOUND_KEY = "soiree:sound";
+let actx = null, master = null;
+const soundOn = () => { try { return localStorage.getItem(SOUND_KEY) !== "off"; } catch { return true; } };
+function audio() {
+  if (!actx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    actx = new AC();
+    master = actx.createGain(); master.gain.value = 0.55;
+    const comp = actx.createDynamicsCompressor(); master.connect(comp); comp.connect(actx.destination);
+  }
+  if (actx.state === "suspended") actx.resume();
+  return actx;
+}
+function noiseBuf(ms) {
+  const n = Math.floor(actx.sampleRate * ms / 1000), b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  return b;
+}
+function tone({ f, f2, type = "sine", t = 0, dur = 0.2, vol = 0.3, attack = 0.004 }) {
+  const c = actx, o = c.createOscillator(), g = c.createGain(), t0 = c.currentTime + t;
+  o.type = type; o.frequency.setValueAtTime(f, t0);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function hiss({ t = 0, dur = 0.03, vol = 0.2, freq = 2000, q = 1, type = "bandpass" }) {
+  const c = actx, src = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(), t0 = c.currentTime + t;
+  src.buffer = noiseBuf(dur * 1000 + 20); fl.type = type; fl.frequency.value = freq; fl.Q.value = q;
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(fl); fl.connect(g); g.connect(master); src.start(t0); src.stop(t0 + dur + 0.02);
+}
+const SFX = {
+  click() { hiss({ dur: 0.035, vol: 0.35, freq: 1400, q: 0.8 }); tone({ f: 190, f2: 120, dur: 0.07, vol: 0.28 }); },
+  pop() { tone({ f: 620, f2: 1100, dur: 0.09, vol: 0.22 }); hiss({ dur: 0.02, vol: 0.12, freq: 3000 }); },
+  clink() {
+    [[0, 1], [0.075, 0.8]].forEach(([t, v]) => [2637, 3951, 5274, 6645].forEach((f, i) =>
+      tone({ f: f * (1 + (t ? 0.012 : 0)), t, dur: 1.4 - i * 0.25, vol: (0.11 - i * 0.022) * v, attack: 0.002 })));
+  },
+  seal() { [523.25, 783.99, 1046.5].forEach((f, i) => tone({ f, t: i * 0.012, dur: 1.8, vol: 0.09 - i * 0.02, attack: 0.02 })); },
+  correct() { tone({ f: 659.25, type: "triangle", dur: 0.22, vol: 0.2 }); tone({ f: 880, type: "triangle", t: 0.11, dur: 0.38, vol: 0.2 }); },
+  wrong() { tone({ f: 196, f2: 150, type: "sine", dur: 0.32, vol: 0.28 }); hiss({ dur: 0.08, vol: 0.06, freq: 500, type: "lowpass" }); },
+  fanfare() { [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone({ f, type: "triangle", t: i * 0.11, dur: i === 3 ? 0.9 : 0.3, vol: 0.16 })); },
+  scuttle(ms) {
+    let t = 0; const end = ms / 1000;
+    while (t < end) { hiss({ t, dur: 0.012, vol: 0.09 + Math.random() * 0.06, freq: 3200 + Math.random() * 2600, q: 4 }); t += 0.028 + Math.random() * 0.022; }
+  },
+};
+function play(name, arg) {
+  if (!soundOn()) return;
+  try { if (audio()) SFX[name](arg); } catch {}
+}
+// iOS: Audio beim ersten Antippen freischalten
+document.addEventListener("pointerdown", () => { if (soundOn()) audio(); }, { once: true, passive: true });
+
 // ── Sichtbares „Drücken“ bei jedem Antippen ─────────────────
 const PRESSABLE = ".tile, .btn, .back, .options button, .choice label, .emojis button, .shuffle, .filters button, .tabs button, .icon, .home__admin, .topbar__crab";
 let pressedEl = null;
@@ -239,6 +296,8 @@ document.addEventListener("pointerdown", (e) => {
   const el = e.target.closest?.(PRESSABLE);
   if (!el || el.disabled) return;
   pressedEl = el; el.classList.add("is-pressed");
+  if (el.matches(".emojis button")) play("pop");
+  else if (!el.matches(".options button")) play("click");
 }, { passive: true });
 ["pointerup", "pointercancel", "pointerleave", "dragstart"].forEach((ev) => document.addEventListener(ev, release, { passive: true }));
 // Kacheln: Druck kurz zeigen, dann öffnen
@@ -302,6 +361,7 @@ async function crabOut() {
   if (g.top + g.h < 0 || g.top > $("#app").offsetHeight) return;   // nicht sichtbar
   const fly = crabClone(g);
   c.style.visibility = "hidden";
+  play("scuttle", CRAB_OUT);
   await fly.animate(scuttle(g.top + g.h + 40, "out"), { duration: CRAB_OUT, easing: "linear", fill: "forwards" }).finished.catch(() => {});
   fly.remove();
 }
@@ -315,12 +375,35 @@ async function crabIn(seq) {
   await new Promise((r) => requestAnimationFrame(r));
   const g = crabGeom(c);
   const fly = crabClone(g);
+  play("scuttle", CRAB_IN);
   await fly.animate(scuttle(g.top + g.h + 40, "in"), { duration: CRAB_IN, easing: "linear", fill: "forwards" }).finished.catch(() => {});
   // bis die Seite fertig eingeblendet ist, liegt der fliegende Krebs obenauf
   await wait(40);
   if (seq === renderSeq && c.isConnected) { c.style.visibility = ""; c.style.animationPlayState = ""; }
   fly.remove();
 }
+
+// ── Lichtschein: zieht regelmäßig über das ganze Bild ──
+const SHEEN_EVERY = 9000, SHEEN_DUR = 1800;
+function sheenPass() {
+  if (REDUCED || document.hidden) return;
+  const app = $("#app"), band = $("#sheen");
+  if (!band) return;
+  const W = app.offsetWidth;
+  band.animate([{ transform: `translateX(${-0.6 * W}px)` }, { transform: `translateX(${1.6 * W}px)` }],
+    { duration: SHEEN_DUR, easing: "cubic-bezier(.45,.05,.35,1)" });
+  // Tasten glänzen genau dann, wenn der Schein sie erreicht
+  const ar = app.getBoundingClientRect(), sc = ar.width / W || 1;
+  $$(".tile").forEach((t) => {
+    const r = t.getBoundingClientRect();
+    const cx = (r.left - ar.left + r.width / 2) / sc, cy = (r.top - ar.top + r.height / 2) / sc;
+    const pos = (cx + cy * 0.27 + 0.6 * W) / (2.2 * W);           // Lage entlang der Diagonale
+    const shine = $(".tile__shine", t);
+    shine?.animate([{ backgroundPosition: "160% 0" }, { backgroundPosition: "-60% 0" }],
+      { duration: SHEEN_DUR * 0.5, delay: Math.max(0, SHEEN_DUR * pos - SHEEN_DUR * 0.25), easing: "ease-in-out" });
+  });
+}
+setTimeout(() => { sheenPass(); setInterval(sheenPass, SHEEN_EVERY); }, 3200);
 
 async function render() {
   const seq = ++renderSeq;
@@ -393,6 +476,8 @@ function confirmAndReturn({ title, text, eyebrow = "Zurück zur Soirée", ms = 4
     <div class="confirm__bar reveal" style="--d:1.5s"><i style="--t:${(ms - 1500) / 1000}s;animation-delay:1.5s"></i></div>
     <div class="eyebrow reveal" style="--d:1.6s">${eyebrow}</div>`;
   $("#app").appendChild(el);
+  play("clink");
+  setTimeout(() => play("seal"), 1050);
   let done = false;
   const finish = () => {
     if (done || !el.isConnected) return; done = true;
@@ -425,6 +510,7 @@ function viewHome(root) {
               <span class="tile__t">${t}</span>
               <span class="tile__d">${d}</span>
               <span class="tile__tap" style="--rip:${i * 0.6}s"><i></i>Antippen</span>
+              <span class="tile__shine" aria-hidden="true"></span>
             </a>
           </li>`).join("")}
       </ul>
@@ -616,6 +702,7 @@ function viewQuiz(root) {
       const pick = Number(b.dataset.i);
       const ok = pick === q.correct;
       if (ok) score++;
+      play(ok ? "correct" : "wrong");
       asked.add(q.q);
       answers.push({ frage: q.q, antwort: q.options[pick], richtig: ok });
       $$(".options button", box).forEach((x, i) => {
@@ -660,6 +747,7 @@ function viewQuiz(root) {
     try {
       const r = await api.rank(name);
       if (r && r.rank && $("#q-top")) {
+        play("fanfare");
         $("#q-top").innerHTML = `
           <div class="rank stage-swap">
             <div class="eyebrow">Deine Platzierung</div>
@@ -814,7 +902,10 @@ async function viewAdmin(root) {
       <header class="topbar reveal" style="max-width:none">
         <a class="back" href="#/"><span>‹</span>Abmelden</a>
         <span></span>
-        <button class="btn btn--ghost btn--small" id="a-refresh">Aktualisieren</button>
+        <span class="actions" style="margin:0;gap:8px;flex-wrap:nowrap">
+          <button class="btn btn--ghost btn--small" id="a-sound">${soundOn() ? "Ton: an" : "Ton: aus"}</button>
+          <button class="btn btn--ghost btn--small" id="a-refresh">Aktualisieren</button>
+        </span>
       </header>
       <div class="admin__head reveal" style="--d:.1s">
         <i class="crab" style="--crab:56px"></i>
@@ -1159,6 +1250,12 @@ async function viewAdmin(root) {
     }));
   }
 
+  $("#a-sound").addEventListener("click", (e) => {
+    const on = !soundOn();
+    try { localStorage.setItem(SOUND_KEY, on ? "on" : "off"); } catch {}
+    e.currentTarget.textContent = on ? "Ton: an" : "Ton: aus";
+    if (on) play("pop");
+  });
   $("#a-refresh").addEventListener("click", async (e) => { busy(e.currentTarget, true, "Lädt"); await load(); busy(e.currentTarget, false); drawTabs(); drawBody(); });
 
   $("#a-body").innerHTML = `<div class="empty">Einen Moment …</div>`;
