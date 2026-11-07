@@ -1378,6 +1378,9 @@ function adminLogin(root) {
   });
 }
 
+// Vorschau des Bildschirmschoners: Seite mit ?schoner aufrufen
+if (/[?&]schoner\b/.test(location.search)) setTimeout(startSaver, 2500);
+
 // Beim (Neu-)Laden ist niemand als Admin angemeldet
 try { sessionStorage.removeItem("soiree:admin"); } catch {}
 render();
