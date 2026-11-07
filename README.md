@@ -46,6 +46,7 @@ Gäste können nur **einreichen**. Lesen, Markieren, Löschen und Herunterladen 
 - **Quizfragen**: `correct` ist die Position der richtigen Antwort, gezählt ab 0.
 - **Emojis**, Inspirationsfragen für die Beichten, Event-Texte.
 - `kiosk.idleSeconds`: Nach so vielen Sekunden ohne Berührung springt die Seite zum Startbildschirm und leert alle Felder (Standard 90).
+- `kiosk.screensaverSeconds`: Nach so vielen Sekunden ohne Berührung startet der Bildschirmschoner – der Krebs krabbelt über den Bildschirm (Standard 300 = 5 Minuten). Erste Berührung beendet ihn, ohne etwas darunter auszulösen.
 - `kiosk.adminIdleSeconds`: Der Bereich „Speicher & Ergebnisse“ meldet sich nach so vielen Sekunden selbst ab (Standard 180). Während einer laufenden Präsentation passiert das nicht.
 
 ## 3 · Veröffentlichen (GitHub Pages)

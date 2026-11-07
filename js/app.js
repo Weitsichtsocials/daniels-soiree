@@ -464,8 +464,71 @@ const go = (hash) => { if (location.hash === hash || (hash === "#/" && !location
 let lastActivity = Date.now();
 ["pointerdown", "keydown", "input", "touchstart", "scroll"].forEach((ev) =>
   window.addEventListener(ev, () => (lastActivity = Date.now()), { passive: true, capture: true }));
+// ── Bildschirmschoner: der Krebs krabbelt über den Bildschirm ──
+let saver = null;
+function startSaver() {
+  if (saver) return;
+  const el = document.createElement("div");
+  el.className = "saver";
+  el.innerHTML = `
+    <div class="saver__center">
+      <div class="eyebrow">${esc(CONFIG.event.date)}</div>
+      <div class="display saver__title">${esc(CONFIG.event.title)}</div>
+      <div class="saver__tap"><i></i>Tippe, um zu beginnen</div>
+    </div>`;
+  $("#app").appendChild(el);
+  const crab = document.createElement("i");
+  crab.className = "crab saver__crab";
+  el.appendChild(crab);
+  saver = { el, crab, alive: true };
+  walk();
+}
+async function walk() {
+  const s = saver; if (!s || !s.alive) return;
+  const app = $("#app"), W = app.offsetWidth, H = app.offsetHeight, c = s.crab;
+  const size = Math.round(Math.min(W, H) * 0.16); c.style.width = size + "px";
+  const fromLeft = Math.random() < 0.5;
+  // oben oder unten laufen – nie quer über den Titel in der Mitte
+  const top = Math.random() < 0.5;
+  const band = top ? [0.06, 0.24] : [0.66, 0.84];
+  const y0 = H * (band[0] + Math.random() * (band[1] - band[0])), y1 = H * (band[0] + Math.random() * (band[1] - band[0]));
+  const x0 = fromLeft ? -size - 20 : W + 20, x1 = fromLeft ? W + 20 : -size - 20;
+  const pauseAt = 0.35 + Math.random() * 0.3, steps = 60, frames = [];
+  for (let i = 0; i <= steps; i++) {
+    let t = i / steps;
+    // kurzer Halt in der Mitte – Krebs schaut sich um
+    const p = t < pauseAt ? (t / pauseAt) * pauseAt : t < pauseAt + 0.12 ? pauseAt : pauseAt + ((t - pauseAt - 0.12) / (0.88 - pauseAt)) * (1 - pauseAt);
+    const walking = !(t >= pauseAt && t < pauseAt + 0.12);
+    const side = walking ? (i % 2 ? 1 : -1) : 0;
+    const x = x0 + (x1 - x0) * p, y = y0 + (y1 - y0) * p + (walking ? (i % 2 ? -3 : 0) : 0);
+    frames.push({ transform: `translate(${x}px, ${y}px) rotate(${side * 6}deg)`, offset: t });
+  }
+  const dur = 9000 + Math.random() * 3000;
+  try { await c.animate(frames, { duration: dur, easing: "linear", fill: "forwards" }).finished; } catch { return; }
+  if (!s.alive) return;
+  await wait(2500 + Math.random() * 4000);
+  walk();
+}
+function stopSaver() {
+  if (!saver) return;
+  const s = saver; saver = null; s.alive = false;
+  s.el.classList.add("is-leaving");
+  setTimeout(() => s.el.remove(), 600);
+}
+// Erste Berührung beendet nur den Schoner und löst nichts darunter aus
+document.addEventListener("pointerdown", (e) => {
+  if (!saver) return;
+  e.preventDefault(); e.stopPropagation();
+  stopSaver(); lastActivity = Date.now();
+}, true);
+document.addEventListener("click", (e) => { if (Date.now() - lastActivity < 400 && e.target.closest?.(".saver")) { e.preventDefault(); e.stopPropagation(); } }, true);
+
 setInterval(async () => {
   const idle = (Date.now() - lastActivity) / 1000;
+  if (!saver && current !== "admin" && !stageOpen && idle > (CONFIG.kiosk.screensaverSeconds || 300)) {
+    if (current !== "") go("#/");
+    startSaver();
+  }
   if (current === "admin") {
     if (!stageOpen && idle > CONFIG.kiosk.adminIdleSeconds) { await api.signOut(); lastActivity = Date.now(); go("#/"); }
   } else if (current !== "" && idle > CONFIG.kiosk.idleSeconds) {

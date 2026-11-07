@@ -72,6 +72,22 @@ html.framed #app {
     rgba(255,248,232,0) 0%, rgba(255,246,228,.08) 36%, rgba(255,253,246,.30) 50%, rgba(255,246,228,.08) 64%, rgba(255,248,232,0) 100%);
 }
 
+/* ── Bildschirmschoner ───────────────────────────────── */
+.saver {
+  position: absolute; inset: 0; z-index: 85; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 45%, rgba(248,243,235,.94), rgba(232,221,206,.97));
+  animation: fadeIn 1.6s var(--ease) both; opacity: 0;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.saver.is-leaving { animation: none; opacity: 0; transition: opacity .6s; }
+.saver__center { position: relative; z-index: 1; padding: 30px; }
+.saver__title { font-size: clamp(56px, 8cqh, 110px); margin-top: 14px; }
+.saver__tap { display: inline-flex; align-items: center; gap: 14px; margin-top: 34px; font-family: var(--serif); font-style: italic; font-size: clamp(20px, 2.4cqh, 30px); color: var(--ink-soft); animation: breathe 3.6s ease-in-out infinite; }
+.saver__tap i { position: relative; width: 16px; height: 16px; border-radius: 50%; background: var(--gold-soft); }
+.saver__tap i::before, .saver__tap i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--gold); animation: ripple 2.4s ease-out infinite; }
+.saver__tap i::after { animation-delay: 1.2s; }
+.saver__crab { position: absolute; left: 0; top: 0; margin: 0; z-index: 2; will-change: transform; }
+
 /* ── Szene ─────────────────────────────────────────────────── */
 .scene { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .scene__room {

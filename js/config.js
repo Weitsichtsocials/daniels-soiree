@@ -27,6 +27,7 @@ export const CONFIG = {
   kiosk: {
     idleSeconds: 90,        // ohne Berührung → zurück zum Startbildschirm, Felder werden geleert
     adminIdleSeconds: 180,  // Admin-Bereich meldet sich danach automatisch ab
+    screensaverSeconds: 300, // Bildschirmschoner nach 5 Minuten ohne Berührung
   },
 
   confessions: {
