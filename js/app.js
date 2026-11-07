@@ -298,6 +298,17 @@ function play(name, arg) {
 // iOS: Audio beim ersten Antippen freischalten
 document.addEventListener("pointerdown", () => { if (soundOn()) audio(); }, { once: true, passive: true });
 
+// ── Fassungen: jeder Knopf bekommt automatisch seine vertiefte Schale ──
+function socketize(root = document) {
+  $$(".btn, .back, .home__admin, .shuffle, .choice label", root).forEach((el) => {
+    if (el.parentElement?.classList.contains("socket")) return;
+    const s = document.createElement("div");
+    s.className = "socket" + (el.matches(".choice label") ? " socket--choice" : "") + (el.matches(".back, .shuffle, .home__admin, .btn--small") ? " socket--small" : "");
+    el.parentNode.insertBefore(s, el); s.appendChild(el);
+  });
+}
+new MutationObserver(() => socketize($("#app"))).observe(document.getElementById("app"), { childList: true, subtree: true });
+
 // ── Sichtbares „Drücken“ bei jedem Antippen ─────────────────
 const PRESSABLE = ".tile, .btn, .back, .options button, .choice label, .emojis button, .shuffle, .filters button, .tabs button, .icon, .home__admin, .topbar__crab";
 let pressedEl = null;

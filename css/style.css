@@ -235,7 +235,7 @@ body.is-sub .scene__veil {
 .tile.is-pressed .tile__shine { opacity: .5; }
 .tile__t {
   display: block; font-family: var(--serif); font-style: italic; font-weight: 500;
-  font-size: clamp(26px, 3.4cqh, 42px); line-height: 1.05; color: var(--ink);
+  font-size: clamp(24px, 3.1cqh, 38px); line-height: 1.05; color: var(--ink);
 }
 .tile__d { display: block; margin-top: clamp(8px, 1.1cqh, 12px); font-family: var(--serif); font-size: clamp(15px, 1.85cqh, 21px); line-height: 1.3; color: var(--ink-soft); max-width: 16em; }
 .tile__tap { /* Fingertipp-Hinweis */
@@ -290,7 +290,7 @@ body.is-sub .scene__veil {
   background: var(--panel);
   -webkit-backdrop-filter: blur(14px) saturate(1.05); backdrop-filter: blur(14px) saturate(1.05);
   border-radius: 50% 50% 4px 4px / 210px 210px 4px 4px;
-  box-shadow: 0 30px 80px -40px rgba(92, 66, 40, .35), inset 0 0 0 1px rgba(255,255,255,.35);
+  box-shadow: 0 30px 80px -40px rgba(92, 66, 40, .35);
   text-align: center;
 }
 .sheet::before {
@@ -609,101 +609,83 @@ body.is-sub .scene__veil {
 }
 
 /* ═══ Echte Knöpfe: flacher Knopf in einer vertieften Fassung ═══════════
-   Der Rand (Fassung) bleibt stehen, nur der Knopf sinkt beim Drücken ein.
-   Gilt für Startseiten-Tasten, alle Buttons, Zurück, Quiz-Antworten,
-   Auswahlfelder und kleine Knöpfe.                                        */
-.tile, .btn, .back, .options.two button, .choice label, .shuffle, .home__admin, .filters button {
+   Die Fassung ist ein eigenes Element (.socket bzw. das <li>), damit
+   Safari/iPad keine Kästen zeichnet (keine Spread-Schatten).            */
+.socket, .tiles > li, .options.two > li {
+  --rim: 6px;
+  display: inline-flex; padding: var(--rim);
+  background: linear-gradient(180deg, #dccdb7 0%, #e8ddcc 55%, #efe6d9 100%);
+  border: 1px solid rgba(150,118,80,.38);
+  box-shadow: inset 0 3px 6px rgba(100,74,42,.30), inset 0 -1px 0 rgba(255,255,255,.75), 0 1px 0 rgba(255,255,255,.85), 0 12px 24px -14px rgba(80,58,34,.35);
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.tiles > li { --rim: 9px; display: flex; border-radius: 50% 50% 22px 22px / 27% 27% 22px 22px; }
+.options.two > li { --rim: 7px; display: flex; border-radius: 50% 50% 16px 16px / 31% 31% 16px 16px; }
+.options.two > li > button { flex: 1; }
+.socket--choice { flex: 1; border-radius: 20px; --rim: 5px; display: flex; }
+.socket--choice > label { flex: 1; display: block; }
+.socket--small { --rim: 4px; }
+
+.tile, .btn, .back, .options.two button, .choice label, .shuffle, .home__admin {
   --face: linear-gradient(180deg, #fffaf2 0%, #f5ecdf 60%, #ecdfcc 100%);
-  --edge: #cdb795;          /* Seitenkante des Knopfs */
-  --depth: 4px;             /* wie hoch der Knopf aus der Fassung ragt */
-  --rim: 6px;               /* Breite der Fassung */
-  --rim-face: #e9dece;
+  --edge: #c9b28d;
+  --depth: 4px;
   background: var(--face);
-  border: 1px solid rgba(160,126,82,.42);
+  border: 1px solid rgba(160,126,82,.45);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.95),                         /* Lichtkante oben */
-    inset 0 -6px 12px -8px rgba(140,108,70,.30),                  /* leichte Wölbung */
-    0 var(--depth) 0 var(--edge),                                 /* Seitenkante */
-    0 calc(var(--depth) + 1px) 3px rgba(80,58,34,.30),            /* Kontaktschatten in der Fassung */
-    0 -2px 5px calc(var(--rim) - 1px) rgba(110,82,48,.20),        /* Schatten oben in der Vertiefung */
-    0 0 0 var(--rim) var(--rim-face),                             /* Fassung */
-    0 2px 0 calc(var(--rim) + 1px) rgba(255,255,255,.75),         /* Lichtkante unten an der Fassung */
-    0 0 0 calc(var(--rim) + 1px) rgba(150,118,80,.40),            /* Außenkante der Fassung */
-    0 10px 22px calc(var(--rim) - 4px) rgba(80,58,34,.16);        /* weicher Schatten der Fassung */
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -6px 12px -8px rgba(140,108,70,.30),
+    0 var(--depth) 0 var(--edge),
+    0 calc(var(--depth) + 1px) 3px rgba(70,50,28,.35);
   transform: none !important; filter: none;
   transition: box-shadow .09s ease-out, background .2s;
   -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  margin: 0;
 }
-.tile > *, .btn > *, .back > *, .options.two button > *, .choice label > span { transition: transform .09s ease-out; }
+.tile { --depth: 5px; flex: 1; }
+.tile > *, .btn > *, .back > *, .options.two button > *, .choice label > span, .btn, .back, .shuffle, .home__admin { transition: transform .09s ease-out; }
 .btn, .back, .options.two button, .shuffle, .home__admin { position: relative; }
-.btn .spinner { flex: none; }
-
 .tile:focus, .btn:focus, .back:focus, .options button:focus, .home__admin:focus, .shuffle:focus { outline: none; }
-.tile:focus-visible, .btn:focus-visible, .back:focus-visible { outline: 2px solid rgba(196,165,117,.6); outline-offset: 8px; }
 
-/* gedrückt: Knopf sinkt in die Fassung, Inhalt rutscht mit */
-.tile.is-pressed, .btn.is-pressed, .back.is-pressed, .options.two button.is-pressed, .choice label.is-pressed,
-.shuffle.is-pressed, .home__admin.is-pressed, .filters button.is-pressed {
-  box-shadow:
-    inset 0 3px 7px rgba(110,82,48,.30),
-    inset 0 1px 0 rgba(255,255,255,.4),
-    0 1px 0 var(--edge),
-    0 1px 1px rgba(80,58,34,.25),
-    0 -1px 3px calc(var(--rim) - 1px) rgba(110,82,48,.22),
-    0 0 0 var(--rim) var(--rim-face),
-    0 2px 0 calc(var(--rim) + 1px) rgba(255,255,255,.75),
-    0 0 0 calc(var(--rim) + 1px) rgba(150,118,80,.40),
-    0 10px 22px calc(var(--rim) - 4px) rgba(80,58,34,.16) !important;
+/* gedrückt: Knopf sinkt in die Fassung */
+.tile.is-pressed, .btn.is-pressed, .back.is-pressed, .options.two button.is-pressed, .choice label.is-pressed, .shuffle.is-pressed, .home__admin.is-pressed {
+  box-shadow: inset 0 3px 8px rgba(100,74,42,.32), inset 0 1px 0 rgba(255,255,255,.35), 0 1px 0 var(--edge), 0 1px 1px rgba(70,50,28,.3) !important;
 }
-.tile.is-pressed > *, .btn.is-pressed > *, .back.is-pressed > *, .options.two button.is-pressed > *, .choice label.is-pressed > span { transform: translateY(3px); }
+.tile.is-pressed > *, .btn.is-pressed > *, .options.two button.is-pressed > *, .choice label.is-pressed > span { transform: translateY(3px); }
+.back.is-pressed, .shuffle.is-pressed, .home__admin.is-pressed { padding-top: 3px; }
 
-/* Startseiten-Tasten: großzügigere Fassung */
-.tile { --depth: 5px; --rim: 9px; border-radius: 50% 50% 16px 16px / 26% 26% 16px 16px; }
-.tile.is-pressed { transform: none !important; }
-.tiles { gap: clamp(22px, 4cqw, 34px); }
-
-/* dunkle Hauptbuttons */
-.btn { --face: linear-gradient(180deg, #54453a 0%, #3a2d24 70%, #30251d 100%); --edge: #1d1611; color: var(--ivory); border-color: rgba(20,14,10,.7); }
-.btn { box-shadow:
-    inset 0 1px 0 rgba(255,240,220,.25), inset 0 -6px 12px -8px rgba(0,0,0,.4),
-    0 var(--depth) 0 var(--edge), 0 calc(var(--depth) + 1px) 3px rgba(40,28,18,.4),
-    0 -2px 5px calc(var(--rim) - 1px) rgba(110,82,48,.20), 0 0 0 var(--rim) var(--rim-face),
-    0 2px 0 calc(var(--rim) + 1px) rgba(255,255,255,.75), 0 0 0 calc(var(--rim) + 1px) rgba(150,118,80,.40),
-    0 10px 22px calc(var(--rim) - 4px) rgba(80,58,34,.16); }
-.btn--gold { --face: linear-gradient(180deg, #c9a46c 0%, #a8844f 70%, #997642 100%); --edge: #745a31; border-color: rgba(110,84,44,.7); }
-.btn--ghost { --face: linear-gradient(180deg, #fffaf2 0%, #f5ecdf 60%, #ecdfcc 100%); --edge: #cdb795; color: var(--ink); border-color: rgba(160,126,82,.42); }
-.btn--ghost { box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.95), inset 0 -6px 12px -8px rgba(140,108,70,.30),
-    0 var(--depth) 0 var(--edge), 0 calc(var(--depth) + 1px) 3px rgba(80,58,34,.30),
-    0 -2px 5px calc(var(--rim) - 1px) rgba(110,82,48,.20), 0 0 0 var(--rim) var(--rim-face),
-    0 2px 0 calc(var(--rim) + 1px) rgba(255,255,255,.75), 0 0 0 calc(var(--rim) + 1px) rgba(150,118,80,.40),
-    0 10px 22px calc(var(--rim) - 4px) rgba(80,58,34,.16); }
+/* dunkle / goldene / helle Hauptbuttons */
+.btn { --face: linear-gradient(180deg, #54453a 0%, #3a2d24 70%, #30251d 100%); --edge: #1a130e; color: var(--ivory); border-color: rgba(20,14,10,.7); }
+.btn { box-shadow: inset 0 1px 0 rgba(255,240,220,.25), inset 0 -6px 12px -8px rgba(0,0,0,.4), 0 var(--depth) 0 var(--edge), 0 calc(var(--depth) + 1px) 3px rgba(30,20,12,.45); }
+.btn--gold { --face: linear-gradient(180deg, #c9a46c 0%, #a8844f 70%, #997642 100%); --edge: #6f5630; border-color: rgba(110,84,44,.7); }
+.btn--ghost { --face: linear-gradient(180deg, #fffaf2 0%, #f5ecdf 60%, #ecdfcc 100%); --edge: #c9b28d; color: var(--ink); border-color: rgba(160,126,82,.45);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -6px 12px -8px rgba(140,108,70,.30), 0 var(--depth) 0 var(--edge), 0 calc(var(--depth) + 1px) 3px rgba(70,50,28,.35); }
 .btn::before { display: none; }
 .btn[disabled] { opacity: .5; }
-
-/* kleine Knöpfe */
-.back, .shuffle, .home__admin, .filters button, .btn--small { --rim: 4px; --depth: 3px; }
+.back, .shuffle, .home__admin, .btn--small { --depth: 3px; }
 .shuffle, .home__admin { padding: 10px 18px; opacity: 1; color: var(--ink-soft); }
-.home__admin { margin-top: 18px; }
+.socket:has(> .home__admin) { margin-top: 16px; }
+
+/* Startseite */
+.tiles { gap: clamp(18px, 3.4cqw, 30px); }
 
 /* Quiz-Antworten */
-.options.two { gap: 24px; padding: 8px; }
-.options.two button { --depth: 4px; --rim: 7px; }
-.options.two button.is-right { --face: linear-gradient(180deg, #d9ead0 0%, #c3dbb6 100%); --edge: #8fb27e; }
-.options.two button.is-false { --face: linear-gradient(180deg, #f3d6cf 0%, #e8bdb2 100%); --edge: #c98d7f; }
+.options.two { gap: 22px; }
+.options.two button { border-radius: 50% 50% 11px 11px / 30% 30% 11px 11px; }
+.options.two button.is-right { --face: linear-gradient(180deg, #d9ead0 0%, #c3dbb6 100%); --edge: #86a974; }
+.options.two button.is-false { --face: linear-gradient(180deg, #f3d6cf 0%, #e8bdb2 100%); --edge: #c2867a; }
 
-/* Auswahlfelder (Mädchen/Junge, Papa/Mama …) als einzelne Knöpfe */
-.choice { gap: 18px; border: 0; padding: 8px; }
-.choice label + label { border-left: 1px solid rgba(160,126,82,.42); }
-.choice label { border-radius: 14px; --rim: 5px; --depth: 3px; }
+/* Auswahlfelder */
+.choice { gap: 16px; border: 0 !important; }
+.choice label { border-radius: 15px; --depth: 3px; }
+.choice label + label { border-left: 1px solid rgba(160,126,82,.45); }
 .choice span { padding: 14px 6px 12px; background: none !important; }
-.choice input:checked + span { color: var(--ink); }
-.choice label:has(input:checked) { --face: linear-gradient(180deg, #f1e3c8 0%, #e3cda5 100%); --edge: #b8975f; }
+.choice label:has(input:checked) { --face: linear-gradient(180deg, #f1e3c8 0%, #e3cda5 100%); --edge: #b0904f; }
 .choice input:checked + span::after { width: 36px; }
 
-/* Admin-Filter */
-.filters { gap: 14px; padding: 6px; }
-.filters button.on { --face: linear-gradient(180deg, #54453a 0%, #3a2d24 100%); --edge: #1d1611; color: var(--ivory); }
+/* Admin-Filter: einfache Knöpfe ohne Fassung */
+.filters { gap: 10px; }
 
 /* ── iPad Hochformat (Station) ───────────────────────── */
 @container app (min-width: 700px) {
