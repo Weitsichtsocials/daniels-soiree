@@ -134,17 +134,21 @@ function quizBoard(rows) {
 }
 const pct = (c, a) => `${Math.round((c / (a || 1)) * 100)} %`;
 
+// Jeder Cloud-Aufruf bekommt ein Zeitlimit – nichts darf ewig hängen
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
+const LIMIT = { insert: 5000, list: 12000, update: 8000, remove: 8000, rank: 5000, isAdmin: 8000, signIn: 12000, signOut: 4000 };
+Object.keys(LIMIT).forEach((k) => { const f = api[k]; api[k] = (...a) => withTimeout(f.apply(api, a), LIMIT[k]); });
+
 // Einreichen: lokal sichern → senden → bei Fehler später nachsenden
-async function submit(table, fields) {
+async function submit(table, fields, { wait: waitForCloud = false } = {}) {
   const row = { id: uuid(), created_at: new Date().toISOString(), ...fields };
   const storedLocally = archive.add({ table, row, synced: false });
-  try {
-    await api.insert(table, row);
-    archive.mark(row.id, { synced: true });
-  } catch (err) {
-    if (!storedLocally) throw err; // weder online noch lokal gespeichert → Gast soll es erneut versuchen
-    scheduleSync();
-  }
+  const send = api.insert(table, row)
+    .then(() => archive.mark(row.id, { synced: true }))
+    .catch((err) => { if (storedLocally) scheduleSync(); else throw err; });
+  // Lokal gesichert → Gast muss nicht auf das WLAN warten
+  if (storedLocally && !waitForCloud) { send.catch(() => {}); return row; }
+  await send;
   return row;
 }
 
@@ -335,6 +339,50 @@ document.addEventListener("click", (e) => {
   setTimeout(() => { location.hash = tile.getAttribute("href"); }, 120);
 });
 
+// ── Kein Scrollen: Inhalt passt immer komplett auf den Bildschirm ──
+function fitView() {
+  const root = $("#view"), sc = $("#scroll");
+  if (!root || current === "admin") { if (root) root.style.zoom = ""; return; }
+  root.style.zoom = "";
+  const need = root.scrollHeight, have = sc.clientHeight;
+  if (need > have + 2) root.style.zoom = String(Math.max(0.7, (have - 4) / need));
+}
+// Inhalte, die sich nachträglich ändern (Quiz-Fragen, Ergebnis), neu einpassen
+let fitTimer;
+new MutationObserver(() => { clearTimeout(fitTimer); fitTimer = setTimeout(fitView, 60); })
+  .observe(document.getElementById("view"), { childList: true, subtree: true });
+window.addEventListener("resize", () => { if (!kbdOpen()) fitView(); });
+
+// ── iPad-Tastatur: Ansicht danach immer zurücksetzen ──
+function resetViewport() { if (window.scrollY || document.documentElement.scrollTop) window.scrollTo(0, 0); }
+const isTyping = (el) => el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && !["radio", "checkbox", "button", "submit", "date"].includes(el.type)));
+const kbdOpen = () => { const vv = window.visualViewport; return !!vv && isTyping(document.activeElement) && window.innerHeight - vv.height > 120; };
+document.addEventListener("focusout", () => setTimeout(() => { if (!isTyping(document.activeElement)) { resetViewport(); placeKbdHint(); } }, 80));
+document.addEventListener("focusin", () => setTimeout(placeKbdHint, 300));
+
+// Glas-Hinweis „Tastatur ausblenden“ – links über der Tastatur
+function placeKbdHint() {
+  const h = document.getElementById("kbd-hint"), vv = window.visualViewport;
+  if (!h) return;
+  const show = isTyping(document.activeElement) && (!vv || window.innerHeight - vv.height > 120 || matchMedia("(pointer: coarse)").matches);
+  h.classList.toggle("show", !!show);
+  if (show && vv) {
+    h.style.top = Math.round(vv.offsetTop + vv.height - h.offsetHeight - 14) + "px";
+    h.style.left = Math.round(vv.offsetLeft + 16) + "px";
+  }
+}
+if (window.visualViewport) {
+  visualViewport.addEventListener("resize", placeKbdHint);
+  visualViewport.addEventListener("scroll", placeKbdHint);
+}
+(function () {
+  const h = document.getElementById("kbd-hint");
+  if (!h) return;
+  const close = (e) => { e.preventDefault(); play("click"); document.activeElement?.blur?.(); h.classList.remove("show"); setTimeout(resetViewport, 60); };
+  h.addEventListener("pointerdown", (e) => e.preventDefault());
+  h.addEventListener("click", close);
+})();
+
 // ── Router, Übergänge, Inaktivität ──────────────────────────
 let teardown = [];
 const onLeave = (fn) => teardown.push(fn);
@@ -351,7 +399,7 @@ function crabGeom(c) {
   const app = $("#app"), ar = app.getBoundingClientRect();
   const s = ar.width / app.offsetWidth || 1;           // Skalierung in der iPad-Vorschau
   const r = c.getBoundingClientRect();
-  return { left: (r.left - ar.left) / s, top: (r.top - ar.top) / s, w: c.offsetWidth, h: c.offsetHeight };
+  return { left: (r.left - ar.left) / s, top: (r.top - ar.top) / s, w: r.width / s, h: r.height / s };
 }
 function crabClone(g) {
   const f = document.createElement("i");
@@ -388,7 +436,7 @@ async function crabOut() {
   const fly = crabClone(g);
   c.style.visibility = "hidden";
   play("scuttle", CRAB_OUT);
-  await fly.animate(scuttle(g.top + g.h + 40, "out"), { duration: CRAB_OUT, easing: "linear", fill: "forwards" }).finished.catch(() => {});
+  await Promise.race([fly.animate(scuttle(g.top + g.h + 40, "out"), { duration: CRAB_OUT, easing: "linear", fill: "forwards" }).finished.catch(() => {}), wait(CRAB_OUT + 250)]);
   fly.remove();
 }
 async function crabIn(seq) {
@@ -402,7 +450,7 @@ async function crabIn(seq) {
   const g = crabGeom(c);
   const fly = crabClone(g);
   play("scuttle", CRAB_IN);
-  await fly.animate(scuttle(g.top + g.h + 40, "in"), { duration: CRAB_IN, easing: "linear", fill: "forwards" }).finished.catch(() => {});
+  await Promise.race([fly.animate(scuttle(g.top + g.h + 40, "in"), { duration: CRAB_IN, easing: "linear", fill: "forwards" }).finished.catch(() => {}), wait(CRAB_IN + 250)]);
   // bis die Seite fertig eingeblendet ist, liegt der fliegende Krebs obenauf
   await wait(40);
   if (seq === renderSeq && c.isConnected) { c.style.visibility = ""; c.style.animationPlayState = ""; }
@@ -452,10 +500,13 @@ async function render() {
   root.classList.remove("is-leaving");
   root.innerHTML = "";
   document.activeElement?.blur?.();
+  resetViewport();
   $("#scroll").scrollTop = 0;
+  root.style.zoom = "";
   void root.offsetWidth;
   root.classList.add("is-entering");
   await routes[view](root);
+  fitView();
   if (!wasFirst && seq === renderSeq) crabIn(seq);
 }
 window.addEventListener("hashchange", render);
@@ -661,7 +712,7 @@ function viewPredictions(root) {
   root.innerHTML = shell(1, "Baby Predictions",
     "Rosa oder Blau, wann, wie groß, wie schwer? Gib deinen Tipp ab, bevor das Geheimnis gelüftet wird.",
     `
-    <form class="form" id="p-form" novalidate>
+    <form class="form form--compact" id="p-form" novalidate>
       <div class="field">
         <span class="field__label">Ich tippe auf</span>
         <div class="choice">
@@ -669,17 +720,17 @@ function viewPredictions(root) {
           <label><input type="radio" name="gender" value="boy"><span>einen Jungen</span></label>
         </div>
       </div>
-      <label class="field">
-        <span class="field__label">Geburtstag des Babys</span>
-        <input class="input" type="date" name="birth_date" min="2026-11-07" max="2027-12-31">
-      </label>
-      <div class="row">
+      <div class="row row--3">
         <label class="field">
-          <span class="field__label">Gewicht <span class="field__hint">– in Gramm</span></span>
+          <span class="field__label">Geburtstag</span>
+          <input class="input" type="date" name="birth_date" min="2026-11-07" max="2027-12-31">
+        </label>
+        <label class="field">
+          <span class="field__label">Gewicht <span class="field__hint">– g</span></span>
           <input class="input" type="number" inputmode="numeric" name="weight_grams" min="500" max="7000" step="10" placeholder="3400">
         </label>
         <label class="field">
-          <span class="field__label">Größe <span class="field__hint">– in cm</span></span>
+          <span class="field__label">Größe <span class="field__hint">– cm</span></span>
           <input class="input" type="number" inputmode="numeric" name="length_cm" min="30" max="70" placeholder="51">
         </label>
       </div>
@@ -691,17 +742,19 @@ function viewPredictions(root) {
           <label><input type="radio" name="looks_like" value="both"><span>beiden</span></label>
         </div>
       </div>
-      <label class="field">
-        <span class="field__label">Mein Namensvorschlag</span>
-        <input class="input" name="name_suggestion" maxlength="80" placeholder="…" ${NOAUTO}>
-      </label>
+      <div class="row">
+        <label class="field">
+          <span class="field__label">Namensvorschlag</span>
+          <input class="input" name="name_suggestion" maxlength="80" placeholder="…" ${NOAUTO}>
+        </label>
+        <label class="field">
+          <span class="field__label">Dein Name</span>
+          <input class="input" name="guest_name" maxlength="80" placeholder="Vor- und Nachname" ${NOAUTO}>
+        </label>
+      </div>
       <label class="field">
         <span class="field__label">Ein Wunsch für das Baby <span class="field__hint">– optional</span></span>
-        <textarea class="textarea" name="wish" maxlength="400" rows="3" placeholder="Möge es …" style="min-height:90px"></textarea>
-      </label>
-      <label class="field">
-        <span class="field__label">Dein Name</span>
-        <input class="input" name="guest_name" maxlength="80" placeholder="Damit wir wissen, wer richtig lag" ${NOAUTO}>
+        <input class="input" name="wish" maxlength="400" placeholder="Möge es …">
       </label>
       <div class="actions"><button class="btn" type="submit">Tipp abgeben</button></div>
     </form>`);
@@ -827,7 +880,7 @@ function viewQuiz(root) {
         ${left ? "" : `<p class="anon-note">Du hast alle ${CONFIG.quiz.length} Fragen gespielt – Respekt!</p>`}
       </div>`;
     $("#q-more")?.addEventListener("click", newRound);
-    try { await submit(TABLES.quiz, { guest_name: name, score, total: Q.length, answers }); }
+    try { await submit(TABLES.quiz, { guest_name: name, score, total: Q.length, answers }, { wait: true }); }
     catch (err) { toast("Ergebnis konnte nicht gespeichert werden – " + errMsg(err)); }
     try {
       const r = await api.rank(name);

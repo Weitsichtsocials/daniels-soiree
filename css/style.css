@@ -49,14 +49,37 @@ a { color: inherit; text-decoration: none; }
 ::selection { background: var(--gold-pale); color: var(--ink); }
 
 /* ── App-Rahmen (iPad 3:4) ───────────────────────────── */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 #app {
-  position: fixed; inset: 0; overflow: hidden;
+  position: absolute; inset: 0; overflow: hidden;
   container-type: size; container-name: app;
   background: var(--cream);
 }
-#scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; z-index: 1; }
+#scroll { position: absolute; inset: 0; overflow: hidden; z-index: 1; }
+body.is-admin #scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+/* Glas-Hinweis über der Tastatur */
+.kbd-hint {
+  position: fixed; left: 16px; top: 0; z-index: 200;
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 14px 22px 14px 16px; border-radius: 99px;
+  background: rgba(255, 252, 246, .62);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,.75);
+  box-shadow: 0 10px 30px rgba(60,42,24,.22), inset 0 1px 0 rgba(255,255,255,.9);
+  font-family: var(--sans); font-size: 15px; font-weight: 500; letter-spacing: .02em; color: var(--ink);
+  opacity: 0; transform: translateY(8px); pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.kbd-hint.show { opacity: 1; transform: none; pointer-events: auto; }
+.kbd-hint__icon {
+  display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--ink); color: var(--ivory); font-size: 18px; line-height: 1; padding-bottom: 4px;
+}
 /* Auf Handy/Desktop: Vorschau im echten iPad-Format (820 × 1180) */
 html.framed body { background: #d8cab6; }
+html.framed #app { position: fixed; }
 html.framed #app {
   inset: auto; left: 50%; top: 50%; width: 820px; height: 1180px;
   transform: translate(-50%, -50%) scale(var(--s, 1)); transform-origin: 50% 50%;
@@ -757,6 +780,38 @@ body.is-sub .scene__veil {
   .tile { min-height: 0; padding-top: clamp(22px, 3.4cqh, 36px); }
   .home__hint { margin-top: 10px; }
   .home__foot { margin-top: 4px; }
+}
+
+/* ── Kompakt: alles passt ohne Scrollen auf das iPad ─────── */
+.row--3 { grid-template-columns: 1.25fr 1fr 1fr; }
+@container app (min-width: 700px) {
+  .view { padding-top: max(18px, env(safe-area-inset-top)); padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  .topbar { padding-bottom: 6px; }
+  .topbar__crab .crab { --crab: 70px; }
+  .sheet { padding: clamp(78px, 8.2cqh, 112px) 64px clamp(26px, 3cqh, 40px); border-radius: 50% 50% 4px 4px / 200px 200px 4px 4px; }
+  .sheet__title { font-size: clamp(50px, 5.4cqh, 66px); }
+  .sheet__intro { font-size: clamp(18px, 1.9cqh, 22px); margin-top: 8px; }
+  .form { margin-top: clamp(16px, 2cqh, 28px); }
+  .field { margin-bottom: clamp(14px, 1.7cqh, 22px); }
+  .field__label { margin-bottom: 6px; }
+  .input, .textarea { font-size: 23px; padding: 6px 2px 8px; }
+  .choice span { padding: 12px 6px 10px; font-size: 23px; }
+  .actions { margin-top: clamp(6px, 1cqh, 14px); }
+  .btn { padding: 19px 40px; }
+  .letter { padding: 18px 24px 10px; margin-top: 14px; }
+  .letter .textarea { min-height: clamp(150px, 17cqh, 230px); }
+  .emojis { margin-top: 12px; padding: 6px; }
+  .emojis button { font-size: 27px; }
+  .prompt { min-height: 0; margin: clamp(12px, 1.6cqh, 22px) auto 4px; }
+  .prompt__text { font-size: clamp(26px, 2.8cqh, 32px); }
+  .anon-note { margin: 12px 0 14px; font-size: 18px; }
+  .form--compact .field { margin-bottom: clamp(12px, 1.5cqh, 20px); }
+  .home .crab { --crab: clamp(66px, 7.6cqh, 110px); }
+  .home__title { font-size: clamp(58px, 6.8cqh, 96px); }
+  .tile { min-height: clamp(150px, 18cqh, 260px); padding-top: clamp(22px, 3.6cqh, 46px); }
+  .home__hint { margin-top: clamp(8px, 1.6cqh, 22px); }
+  #c-letter .textarea { min-height: clamp(110px, 12.5cqh, 180px); }
+  .shuffle { margin-top: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
